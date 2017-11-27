@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import sys
+import os
+import tempfile
+import shutil
+import ConfigParser
+
+def copy_tpl(src, dst, values):
+    with open(src, 'r') as src_fp:
+        data = src_fp.read()
+        data = data.format(**values)
+        with open(dst, 'w') as dst_fp:
+            dst_fp.write(data)
+
+if len(sys.argv) != 2:
+    print('Incorrect argument')
+    sys.exit(1)
+
+src_dir = sys.argv[1]
+
+tmp_dir = tempfile.mkdtemp()
+print(tmp_dir)
+def cleanup():
+    shutil.rmtree(tmp_dir)
+
+
+if not os.path.isdir(src_dir):
+    print('{0} is not a directory!'.format(src_dir))
+    sys.exit(1)
+
+# read application.ini
+src_app_config = ConfigParser.ConfigParser()
+try:
+    src_app_config.readfp(open(os.path.join(src_dir, 'application.ini')))
+    app_version = src_app_config.get('App', 'Version')
+    app_build = src_app_config.get('App', 'BuildID')
+except Exception as e:
+    print('Failed to read application.ini: {0}'.format(str(e)))
+    cleanup()
+    sys.exit(1)
+
+full_version = '{0}.{1}'.format(app_version, app_build)
+print('Detected version {0}'.format(full_version))
+
+pkg_dst = os.path.join(tmp_dir, 'package.dir')
+debian_dst = os.path.join(pkg_dst, 'DEBIAN')
+os.makedirs(debian_dst)
+
+for d in ['usr/lib/firefox', 'usr/share/pixmaps', 'usr/bin']:
+    os.makedirs(os.path.join(pkg_dst, d))
+
+copy_tpl('debian-tpl/control', os.path.join(debian_dst, 'control'), {'version':full_version})
+
+# copy other files
+dst_usr = os.path.join(pkg_dst, 'usr/lib/firefox')
+for f in os.listdir(src_dir):
+    p = os.path.join(src_dir, f)
+    if os.path.isfile(p):
+        shutil.copy(p, dst_usr)
+    elif os.path.isdir(p):
+        if f == 'dictionaries':
+            os.symlink('../../share/hunspell', os.path.join(dst_usr, f))
+        else:
+            shutil.copytree(p, os.path.join(dst_usr, f))
+
+# icons
+shutil.copy('debian-tpl/firefox.png', os.path.join(pkg_dst, 'usr/share/pixmaps'))
+
+os.symlink('../lib/firefox/firefox', os.path.join(pkg_dst, 'usr/bin/firefox'))
+
+cmd = '/usr/bin/dpkg -b {0}/package.dir {0}'.format(tmp_dir)
+os.system(cmd)
+
+deb_pkg = False
+
+for f in os.listdir(tmp_dir):
+    if f.endswith('.deb'):
+        shutil.copy(os.path.join(tmp_dir,f), '.')
+        print('File {0} successfully copied to local directory.'.format(f))
+cleanup()
+
+
