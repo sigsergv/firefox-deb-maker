@@ -88,7 +88,7 @@ shutil.copy(os.path.join(src_dir,'browser/extensions/{972ce4c6-7e08-4474-a285-32
 #cleanup()
 #sys.exit(0)
 
-cmd = '/usr/bin/dpkg -b {0}/package.dir {0}'.format(tmp_dir)
+cmd = 'fakeroot /usr/bin/dpkg -b {0}/package.dir {0}'.format(tmp_dir)
 os.system(cmd)
 
 deb_pkg = False
