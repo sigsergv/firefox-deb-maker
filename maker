@@ -77,13 +77,18 @@ shutil.copy('debian-tpl/firefox.desktop', os.path.join(pkg_dst, 'usr/share/appli
 os.symlink('../lib/firefox/firefox', os.path.join(pkg_dst, 'usr/bin/firefox'))
 
 for f in ['extensions']:
-    shutil.rmtree(os.path.join(pkg_dst, 'usr/lib/firefox/browser',f))
+    p = os.path.join(pkg_dst, 'usr/lib/firefox/browser',f)
+    if os.path.exists(p):
+        shutil.rmtree(p)
 
 os.symlink('../../firefox-addons/extensions', os.path.join(pkg_dst, 'usr/lib/firefox/browser/extensions'))
 os.symlink('../../firefox-addons/plugins', os.path.join(pkg_dst, 'usr/lib/firefox/browser/plugins'))
 os.symlink('../../firefox-addons/searchplugins', os.path.join(pkg_dst, 'usr/lib/firefox/browser/searchplugins'))
 
-shutil.copy(os.path.join(src_dir,'browser/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}.xpi'), os.path.join(pkg_dst, 'usr/lib/firefox-addons/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}.xpi'))
+try:
+    shutil.copy(os.path.join(src_dir,'browser/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}.xpi'), os.path.join(pkg_dst, 'usr/lib/firefox-addons/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}.xpi'))
+except Exception as e:
+    print(e)
 
 #cleanup()
 #sys.exit(0)
