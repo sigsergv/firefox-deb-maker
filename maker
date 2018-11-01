@@ -7,6 +7,10 @@ import os
 import tempfile
 import shutil
 import ConfigParser
+import re
+
+
+COMPACT_VERSION = re.compile('^[0-9]+\\.[0-9]+$')
 
 def copy_tpl(src, dst, values):
     with open(src, 'r') as src_fp:
@@ -41,6 +45,9 @@ except Exception as e:
     print('Failed to read application.ini: {0}'.format(str(e)))
     cleanup()
     sys.exit(1)
+
+if COMPACT_VERSION.match(app_version) is not None:
+    app_version += '.0'
 
 full_version = '{0}.{1}'.format(app_version, app_build)
 print('Detected version {0}'.format(full_version))
